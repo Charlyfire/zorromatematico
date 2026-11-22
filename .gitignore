@@ -1,0 +1,18 @@
+# Dependencies & build output
+node_modules/
+dist/
+dist-ssr/
+
+# Raw un-served source images (processed assets live in public/assets/)
+imágenes/
+
+# Logs & local editor files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.local
+.env
+.env.*
