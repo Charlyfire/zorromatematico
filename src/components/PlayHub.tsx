@@ -5,8 +5,10 @@ import {
   ChevronRight,
   Layers,
   Lock,
+  Minus,
   Monitor,
   Play,
+  Plus,
   Printer,
   SlidersHorizontal,
   Tablet,
@@ -26,6 +28,7 @@ import type {
 import {
   buildThematicGamesForCollections,
   COLLECTION_BASE_IDS,
+  DEFAULT_DIFFICULTY_CONFIG,
   DIFFICULTY_DESCRIPTIONS,
   DIFFICULTY_LABELS,
   DIFFICULTY_ORDER,
@@ -76,6 +79,7 @@ export function PlayHub({
   // Inline variant micro-toggles inside Correspondencias & Clasificación cards so all 8 fit in 4x2!
   const [matchSubMode, setMatchSubMode] = useState<'silhouette' | 'related'>('silhouette');
   const [clsSubMode, setClsSubMode] = useState<'thematic' | 'attributes'>('attributes');
+  const [customMemoryPairs, setCustomMemoryPairs] = useState<number | null>(null);
 
   const stripRef = useRef<HTMLDivElement | null>(null);
 
@@ -246,6 +250,7 @@ export function PlayHub({
         <div className="segmented" style={{ flex: '0 0 auto' }} role="group" aria-label="Modo">
           <button
             type="button"
+            style={{ flex: '0 0 auto', padding: '8px 11px' }}
             className={mode === 'individual' ? 'active' : ''}
             onClick={() => onChangeMode('individual')}
             data-testid="mode-individual"
@@ -256,6 +261,7 @@ export function PlayHub({
           </button>
           <button
             type="button"
+            style={{ flex: '0 0 auto', padding: '8px 11px' }}
             className={mode === 'asamblea' ? 'active' : ''}
             onClick={() => onChangeMode('asamblea')}
             data-testid="mode-asamblea"
@@ -272,7 +278,10 @@ export function PlayHub({
               key={lvl}
               type="button"
               className={difficulty === lvl ? 'active' : ''}
-              onClick={() => onChangeDifficulty(lvl)}
+              onClick={() => {
+                setCustomMemoryPairs(null);
+                onChangeDifficulty(lvl);
+              }}
               data-testid={`diff-${lvl}`}
               title={DIFFICULTY_DESCRIPTIONS[lvl]}
             >
@@ -284,6 +293,7 @@ export function PlayHub({
         <div className="segmented" style={{ flex: '0 0 auto' }} role="group" aria-label="Progresión">
           <button
             type="button"
+            style={{ flex: '0 0 auto', padding: '8px 11px' }}
             className={progression === 'progressive' ? 'active' : ''}
             onClick={() => onChangeProgression('progressive')}
             data-testid="prog-progressive"
@@ -294,6 +304,7 @@ export function PlayHub({
           </button>
           <button
             type="button"
+            style={{ flex: '0 0 auto', padding: '8px 11px' }}
             className={progression === 'fixed' ? 'active' : ''}
             onClick={() => onChangeProgression('fixed')}
             data-testid="prog-fixed"
@@ -448,6 +459,73 @@ export function PlayHub({
                     </div>
                   </div>
 
+                  {act.gameType === 'memory' && (() => {
+                    const maxMemPairs = Math.min(
+                      10,
+                      Math.max(2, act.memoryConfig?.itemIds.length || 8)
+                    );
+                    const defaultPairs = DEFAULT_DIFFICULTY_CONFIG.memory[difficulty].pairsCount;
+                    const effPairs = Math.min(
+                      maxMemPairs,
+                      Math.max(2, customMemoryPairs ?? defaultPairs)
+                    );
+                    return (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 6,
+                          padding: '2px 6px',
+                          borderRadius: 9,
+                          background: 'var(--bg-table)',
+                          border: '1.5px solid var(--border-card)',
+                        }}
+                      >
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--ink-secondary)' }}>
+                          Parejas
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            style={{ width: 24, height: 24, borderRadius: 7, boxShadow: 'none' }}
+                            disabled={effPairs <= 2}
+                            onClick={() => setCustomMemoryPairs(Math.max(2, effPairs - 1))}
+                            aria-label="Menos parejas"
+                            data-testid="hub-mem-pairs-dec"
+                          >
+                            <Minus size={13} />
+                          </button>
+                          <span
+                            data-testid="hub-mem-pairs-val"
+                            style={{
+                              minWidth: 22,
+                              textAlign: 'center',
+                              fontFamily: 'var(--font-display)',
+                              fontWeight: 700,
+                              fontSize: '0.84rem',
+                              color: 'var(--accent-teal)',
+                            }}
+                          >
+                            {effPairs}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            style={{ width: 24, height: 24, borderRadius: 7, boxShadow: 'none' }}
+                            disabled={effPairs >= maxMemPairs}
+                            onClick={() => setCustomMemoryPairs(Math.min(maxMemPairs, effPairs + 1))}
+                            aria-label="Más parejas"
+                            data-testid="hub-mem-pairs-inc"
+                          >
+                            <Plus size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {entry.hasSubToggle && entry.toggleKind === 'matching' && (
                     <div className="segmented" style={{ padding: 2, borderRadius: 9 }}>
                       <button
@@ -510,14 +588,29 @@ export function PlayHub({
                     className="btn btn-primary btn-sm"
                     style={{ flex: 1, padding: '8px 10px', fontSize: '0.92rem' }}
                     data-testid={`launch-${act.id}`}
-                    onClick={() =>
+                    onClick={() => {
+                      const maxMemPairs = Math.min(
+                        10,
+                        Math.max(2, act.memoryConfig?.itemIds.length || 8)
+                      );
+                      const effPairs =
+                        act.gameType === 'memory'
+                          ? Math.min(
+                              maxMemPairs,
+                              Math.max(
+                                2,
+                                customMemoryPairs ?? DEFAULT_DIFFICULTY_CONFIG.memory[difficulty].pairsCount
+                              )
+                            )
+                          : undefined;
                       onLaunch({
                         activity: act,
                         mode,
                         difficulty,
                         progression,
-                      })
-                    }
+                        memoryPairsCount: effPairs,
+                      });
+                    }}
                   >
                     <Play size={15} fill="currentColor" /> Jugar
                   </button>

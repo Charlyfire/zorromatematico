@@ -1079,5 +1079,6 @@ export const DEFAULT_PREFS: UserPrefs = {
   lastProgression: 'progressive',
   lastThemeId: 'transportes',
   lastThemeIds: ['transportes'],
+  pdiSafeBottom: true,
   seenDemos: {},
 };

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   ArrowLeft,
+  ArrowUpFromLine,
   HelpCircle,
   Layers,
   Maximize2,
@@ -123,12 +124,12 @@ export function GameShell({
         </div>
 
         <div className="game-topbar-right">
-          {themeCtx && (
+          {themeCtx?.onOpenPicker && (
             <button
               type="button"
               className="btn btn-secondary btn-sm"
               onClick={themeCtx.onOpenPicker}
-              title={`Cambiar temáticas (${themeCtx.label})`}
+              title={`Cambiar temáticas (${themeCtx.label || ''})`}
               aria-label="Cambiar temáticas"
               data-testid="game-theme-picker-btn"
             >
@@ -173,6 +174,23 @@ export function GameShell({
           >
             {soundEnabled || voiceEnabled ? <Volume2 size={19} /> : <VolumeX size={19} />}
           </button>
+          {themeCtx && (
+            <button
+              type="button"
+              className={`btn-icon ${themeCtx.pdiSafeBottom ? 'btn-icon-active' : ''}`}
+              onClick={themeCtx.onTogglePdiSafeBottom}
+              title={
+                themeCtx.pdiSafeBottom
+                  ? 'Margen inferior PDI activado (pulsa para ocupar toda la pantalla)'
+                  : 'Activar margen inferior para barra de PDI'
+              }
+              aria-label="Margen inferior PDI"
+              aria-pressed={themeCtx.pdiSafeBottom}
+              data-testid="game-pdi-safe-toggle"
+            >
+              <ArrowUpFromLine size={18} />
+            </button>
+          )}
           {fullscreenSupported && (
             <button
               type="button"

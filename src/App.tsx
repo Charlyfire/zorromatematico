@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { FolderHeart, Images, Play } from 'lucide-react';
+import { ArrowUpFromLine, FolderHeart, Images, Play } from 'lucide-react';
 import type {
   Activity,
   AppDataState,
@@ -100,6 +100,16 @@ export function App() {
     () => formatSelectedThemesLabel(resolvedSelectedCollections, isAllThemes),
     [resolvedSelectedCollections, isAllThemes]
   );
+
+  const pdiSafeBottom = state.prefs.pdiSafeBottom ?? true;
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('pdi-safe-bottom', pdiSafeBottom);
+  }, [pdiSafeBottom]);
+
+  const togglePdiSafeBottom = () => {
+    updatePrefs({ pdiSafeBottom: !pdiSafeBottom });
+  };
 
   useEffect(() => {
     let active = true;
@@ -276,7 +286,14 @@ export function App() {
     let gameElement: ReactNode;
     switch (session.activity.gameType) {
       case 'memory':
-        gameElement = <MemoryGame key={renderKey} {...commonProps} pairs={state.pairs} />;
+        gameElement = (
+          <MemoryGame
+            key={renderKey}
+            {...commonProps}
+            pairs={state.pairs}
+            initialPairsCount={session.memoryPairsCount}
+          />
+        );
         break;
       case 'classification':
         gameElement = (
@@ -308,12 +325,14 @@ export function App() {
         break;
     }
 
-    const themeContextValue = session.activity.builtIn
-      ? {
-          label: activeThemesLabel,
-          onOpenPicker: () => setShowInGameThemeModal(true),
-        }
-      : null;
+    const themeContextValue = {
+      label: session.activity.builtIn ? activeThemesLabel : undefined,
+      onOpenPicker: session.activity.builtIn
+        ? () => setShowInGameThemeModal(true)
+        : undefined,
+      pdiSafeBottom,
+      onTogglePdiSafeBottom: togglePdiSafeBottom,
+    };
 
     return (
       <GameThemeContext.Provider value={themeContextValue}>
@@ -409,6 +428,21 @@ export function App() {
             data-testid="nav-games"
           >
             <FolderHeart size={17} /> Mis juegos
+          </button>
+          <button
+            type="button"
+            className={`nav-pill ${pdiSafeBottom ? 'active' : ''}`}
+            onClick={togglePdiSafeBottom}
+            data-testid="nav-pdi-safe-toggle"
+            aria-pressed={pdiSafeBottom}
+            title={
+              pdiSafeBottom
+                ? 'Zona segura PDI activada: deja espacio libre abajo para la barra de la pizarra'
+                : 'Activar margen inferior para que la barra de la PDI no tape botones'
+            }
+            style={{ marginLeft: 6, fontSize: '0.84rem', padding: '6px 12px' }}
+          >
+            <ArrowUpFromLine size={15} /> Margen PDI
           </button>
         </div>
       </nav>

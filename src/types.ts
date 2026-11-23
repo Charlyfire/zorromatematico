@@ -195,6 +195,7 @@ export interface UserPrefs {
   lastProgression: DifficultyProgression;
   lastThemeId?: string;
   lastThemeIds?: string[];
+  pdiSafeBottom?: boolean;
   seenDemos: Partial<Record<GameType, boolean>>;
 }
 
@@ -220,5 +221,6 @@ export interface LaunchSession {
   mode: PlayMode;
   difficulty: DifficultyLevel;
   progression: DifficultyProgression;
+  memoryPairsCount?: number;
   customDifficultyConfig?: ActivityDifficultyConfig;
 }

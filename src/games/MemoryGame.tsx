@@ -27,6 +27,7 @@ interface MemoryGameProps {
   pairs: ImagePair[];
   mode: PlayMode;
   initialDifficulty: DifficultyLevel;
+  initialPairsCount?: number;
   progression: DifficultyProgression;
   soundEnabled: boolean;
   voiceEnabled: boolean;
@@ -55,6 +56,7 @@ export function MemoryGame({
   pairs,
   mode,
   initialDifficulty,
+  initialPairsCount,
   progression,
   soundEnabled,
   voiceEnabled,
@@ -101,8 +103,11 @@ export function MemoryGame({
   const startDiff = diffTable[initialDifficulty];
   const useSmallDetails = memConfig.variant === 'small-details';
   const activePool = useSmallDetails ? smallDetailPool : basePairPool;
-  const maxAvailablePairs = Math.min(8, Math.max(2, activePool.length));
-  const startPairs = Math.min(maxAvailablePairs, Math.max(2, startDiff.pairsCount));
+  const maxAvailablePairs = Math.min(10, Math.max(2, activePool.length));
+  const startPairs = Math.min(
+    maxAvailablePairs,
+    Math.max(2, initialPairsCount ?? startDiff.pairsCount)
+  );
 
   const [pairsCount, setPairsCount] = useState(startPairs);
   const [boardNumber, setBoardNumber] = useState(1);
@@ -248,22 +253,68 @@ export function MemoryGame({
     buildBoard(pairsCount, useSmallDetails, false);
   };
 
+  const handleSelectPairsCount = (nextCount: number) => {
+    const clamped = Math.min(maxAvailablePairs, Math.max(2, nextCount));
+    if (clamped === pairsCount) return;
+    setPairsCount(clamped);
+    setBoardsAtCurrentCount(0);
+    buildBoard(clamped, useSmallDetails, false);
+  };
+
+  const pairCountChoices = useMemo(
+    () => Array.from({ length: maxAvailablePairs - 1 }, (_, i) => i + 2),
+    [maxAvailablePairs]
+  );
+
+  // Symmetric rectangular grids for every pair count 2..10 (4..20 cards), zero orphan cards!
   const cardCount = cards.length;
   const cols =
-    cardCount <= 4 ? 2 : cardCount <= 6 ? 3 : cardCount <= 8 ? 4 : cardCount <= 10 ? 5 : cardCount === 14 ? 5 : 4;
+    cardCount <= 4
+      ? 2
+      : cardCount <= 6
+      ? 3
+      : cardCount <= 8
+      ? 4
+      : cardCount <= 10
+      ? 5
+      : cardCount <= 12
+      ? 4
+      : cardCount <= 14
+      ? 7
+      : cardCount <= 16
+      ? 4
+      : cardCount <= 18
+      ? 6
+      : 5;
   const rows = Math.ceil(cardCount / cols);
   const memCardSize =
     mode === 'asamblea'
-      ? rows <= 2
+      ? cols === 7
+        ? '19vh'
+        : rows <= 2
         ? '23vh'
         : rows === 3
         ? '16.5vh'
         : '13.2vh'
+      : cols === 7
+      ? '20.5vh'
       : rows <= 2
       ? '26vh'
       : rows === 3
       ? '18.5vh'
       : '14.8vh';
+  const gridMaxWidth =
+    cols === 2
+      ? 440
+      : cols === 3
+      ? 660
+      : cols === 4
+      ? 820
+      : cols === 5
+      ? 980
+      : cols === 6
+      ? 1060
+      : 1160;
   const currentDifficulty = difficultyForMemory(pairsCount, useSmallDetails, diffTable);
 
   const stepUpButtonLabel = `Subir dificultad (${pairsCount + 1} parejas)`;
@@ -315,8 +366,41 @@ export function MemoryGame({
       onExit={onExit}
       bottomDock={bottomDock}
     >
-      <div className="game-prompt-bar">
+      <div className="game-prompt-bar" style={{ gap: 12 }}>
         <h2 className="game-prompt-text">{promptText}</h2>
+        <div
+          className="segmented"
+          style={{ padding: 3, borderRadius: 12, gap: 2, flexShrink: 0 }}
+          role="group"
+          aria-label="Elegir número de parejas"
+          data-testid="memory-pairs-selector"
+        >
+          <span
+            style={{
+              fontSize: '0.76rem',
+              fontWeight: 700,
+              color: 'var(--ink-secondary)',
+              padding: '0 6px',
+              display: 'inline-flex',
+              alignItems: 'center',
+            }}
+          >
+            Parejas:
+          </span>
+          {pairCountChoices.map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={pairsCount === n ? 'active' : ''}
+              style={{ padding: '4px 8px', fontSize: '0.82rem', minWidth: 28 }}
+              onClick={() => handleSelectPairsCount(n)}
+              data-testid={`memory-pairs-${n}`}
+              aria-label={`${n} parejas`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
         <span className="chip chip-sage">
           {matchedKeys.size} / {cardCount / 2} parejas
         </span>
@@ -327,7 +411,7 @@ export function MemoryGame({
         style={
           {
             gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-            maxWidth: cols === 2 ? 440 : cols === 3 ? 660 : cols === 4 ? 820 : 980,
+            maxWidth: gridMaxWidth,
             '--mem-card-size': memCardSize,
           } as React.CSSProperties
         }
